@@ -312,19 +312,19 @@ func Interactive() {
 			var lhostString string
 			var value uint64
 
-			if value, err = strconv.ParseUint(cmdStr[1], 10, 16); err != nil {
-				fmt.Printf("Bad sport %s\n", cmdStr[1])
+			lhostString = cmdStr[1]
+			if value, err = strconv.ParseUint(cmdStr[2], 10, 16); err != nil {
+				fmt.Printf("Bad sport %s\n", cmdStr[2])
 				continue
 			}
 			sport = uint16(value)
 
-			if value, err = strconv.ParseUint(cmdStr[2], 10, 16); err != nil {
-				fmt.Printf("Bad dport %s\n", cmdStr[2])
+			if value, err = strconv.ParseUint(cmdStr[3], 10, 16); err != nil {
+				fmt.Printf("Bad dport %s\n", cmdStr[3])
 				continue
 			}
 			dport = uint16(value)
 
-			lhostString = cmdStr[3]
 			lhost := net.ParseIP(lhostString)
 			if lhost == nil {
 				fmt.Println("invalid ip address.")
