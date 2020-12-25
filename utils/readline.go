@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-runewidth"
@@ -13,6 +15,8 @@ import (
 )
 
 var history []string = []string{""}
+var logfile string = ".venom_history"
+var historyFd *os.File = nil
 
 type ctx struct {
 	w        io.Writer
@@ -94,6 +98,24 @@ func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	c.old_row = row
 	c.old_crow = crow
 
+	return nil
+}
+
+func SaveHistory(line string) error {
+	var err error
+
+	if historyFd == nil {
+		historyFd, err = os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = historyFd.WriteString(line + "\n")
+	if err != nil {
+		return err
+	}
+	historyFd.Sync()
 	return nil
 }
 
@@ -250,5 +272,37 @@ loop:
 		history[len(history)-1] = inputstr
 		history = append(history, "")
 	}
+	SaveHistory(inputstr)
 	return inputstr, nil
+}
+
+func LoadHistory() error {
+	fd, err := os.Open(logfile)
+	if err != nil {
+		// println("logfile not existed")
+		return err
+	}
+
+	buf := bufio.NewReader(fd)
+	for {
+		line, err := buf.ReadString('\n')
+		line = strings.TrimSpace(line)
+		history = append(history, line)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+	}
+}
+
+func Clear() error {
+	err := historyFd.Close()
+	if err != nil {
+		return err
+	}
+
+	historyFd = nil
+	return nil
 }

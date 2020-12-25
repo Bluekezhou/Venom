@@ -104,6 +104,7 @@ func Interactive() {
 	}
 	defer t.Close()
 
+	utils.LoadHistory()
 	for {
 		var header string
 
@@ -407,16 +408,16 @@ func Interactive() {
 			}
 			fmt.Print("use password (1) / ssh key (2)? ")
 
-			var choice_s string
+			var choiceStr string
 			var choice uint16
 
-			if choice_s, err = t.ReadString(); err != nil {
+			if choiceStr, err = t.ReadString(); err != nil {
 				fmt.Println("Error to read choice")
 				continue
 			}
 
-			if value, err = strconv.ParseUint(choice_s, 10, 16); err != nil {
-				fmt.Printf("Bad choice %s\n", choice_s)
+			if value, err = strconv.ParseUint(choiceStr, 10, 16); err != nil {
+				fmt.Printf("Bad choice %s\n", choiceStr)
 				continue
 			}
 			choice = uint16(value)
@@ -463,6 +464,7 @@ func Interactive() {
 			}
 		case "exit":
 			t.Close()
+			utils.Clear()
 			os.Exit(0)
 		case "":
 			continue
