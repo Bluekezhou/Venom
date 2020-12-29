@@ -19,14 +19,14 @@ var logfile string = ".venom_history"
 var historyFd *os.File = nil
 
 type ctx struct {
-	w        io.Writer
-	input    []rune
-	last     []rune
-	prompt   string
-	cursor_x int
-	old_row  int
-	old_crow int
-	size     int
+	w       io.Writer
+	input   []rune
+	last    []rune
+	prompt  string
+	cursorX int
+	oldRow  int
+	oldCrow int
+	size    int
 }
 
 func (c *ctx) redraw(dirty bool, passwordChar rune) error {
@@ -38,10 +38,10 @@ func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	if dirty {
 		buf.WriteString("\x1b[0K")
 	}
-	for i := 0; i < c.old_row-c.old_crow; i++ {
+	for i := 0; i < c.oldRow-c.oldCrow; i++ {
 		buf.WriteString("\x1b[B")
 	}
-	for i := 0; i < c.old_row; i++ {
+	for i := 0; i < c.oldRow; i++ {
 		if dirty {
 			buf.WriteString("\x1b[2K")
 		}
@@ -60,7 +60,7 @@ func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	ccol, crow, col, row := -1, 0, 0, 0
 	plen := len([]rune(c.prompt))
 	for i, r := range []rune(c.prompt + string(rs)) {
-		if i == plen+c.cursor_x {
+		if i == plen+c.cursorX {
 			ccol = col
 			crow = row
 		}
@@ -95,12 +95,13 @@ func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	buf.WriteString("\x1b[5>l")
 	io.Copy(c.w, &buf)
 
-	c.old_row = row
-	c.old_crow = crow
+	c.oldRow = row
+	c.oldCrow = crow
 
 	return nil
 }
 
+// SaveHistory to logfile
 func SaveHistory(line string) error {
 	var err error
 
@@ -119,6 +120,7 @@ func SaveHistory(line string) error {
 	return nil
 }
 
+// ReadLine from console
 func ReadLine(tty *tty.TTY, msg string) (string, error) {
 	c := new(ctx)
 	c.w = colorable.NewColorableStdout()
@@ -134,9 +136,9 @@ func ReadLine(tty *tty.TTY, msg string) (string, error) {
 	c.input = []rune(msg)
 
 	baseSize := len(c.input)
-	c.cursor_x = baseSize
+	c.cursorX = baseSize
 	dirty := true
-	history_index := len(history)
+	historyIndex := len(history)
 loop:
 	for !quit {
 		err := c.redraw(dirty, 0)
@@ -153,10 +155,10 @@ loop:
 		switch r {
 		case 0:
 		case 1: // CTRL-A
-			c.cursor_x = baseSize
+			c.cursorX = baseSize
 		case 2: // CTRL-B
-			if c.cursor_x > baseSize {
-				c.cursor_x--
+			if c.cursorX > baseSize {
+				c.cursorX--
 			}
 		case 3: // BREAK
 			fmt.Println("Ctrl+C")
@@ -168,15 +170,15 @@ loop:
 			}
 			return "", io.EOF
 		case 5: // CTRL-E
-			c.cursor_x = len(c.input)
+			c.cursorX = len(c.input)
 		case 6: // CTRL-F
-			if c.cursor_x < len(c.input) {
-				c.cursor_x++
+			if c.cursorX < len(c.input) {
+				c.cursorX++
 			}
 		case 8, 0x7F: // BS
-			if c.cursor_x > baseSize {
-				c.input = append(c.input[0:c.cursor_x-1], c.input[c.cursor_x:len(c.input)]...)
-				c.cursor_x--
+			if c.cursorX > baseSize {
+				c.input = append(c.input[0:c.cursorX-1], c.input[c.cursorX:len(c.input)]...)
+				c.cursorX--
 				dirty = true
 			}
 		case 27:
@@ -191,50 +193,50 @@ loop:
 				}
 				switch r {
 				case 'A': // arrow up
-					if history_index == len(history) && history_index >= 2 {
-						history_index -= 2 // jump over last blank padding string
-					} else if history_index > 0 {
-						history_index -= 1
+					if historyIndex == len(history) && historyIndex >= 2 {
+						historyIndex -= 2 // jump over last blank padding string
+					} else if historyIndex > 0 {
+						historyIndex--
 					}
-					c.input = append([]rune(msg), []rune(history[history_index])...)
-					c.cursor_x = len(c.input)
+					c.input = append([]rune(msg), []rune(history[historyIndex])...)
+					c.cursorX = len(c.input)
 					dirty = true
 				case 'B': // arrow down
-					history_index = history_index + 1
-					if history_index > len(history)-1 {
-						history_index = len(history) - 1
+					historyIndex = historyIndex + 1
+					if historyIndex > len(history)-1 {
+						historyIndex = len(history) - 1
 					}
-					c.input = append([]rune(msg), []rune(history[history_index])...)
-					c.cursor_x = len(c.input)
+					c.input = append([]rune(msg), []rune(history[historyIndex])...)
+					c.cursorX = len(c.input)
 					dirty = true
 				case 'C': // arrow right
-					if c.cursor_x < len(c.input) {
-						c.cursor_x++
+					if c.cursorX < len(c.input) {
+						c.cursorX++
 					}
 				case 'D': // arrow left
-					if c.cursor_x > baseSize {
-						c.cursor_x--
+					if c.cursorX > baseSize {
+						c.cursorX--
 					}
 				}
 			}
 		case 10: // LF
 			break loop
 		case 11: // CTRL-K
-			c.input = c.input[:c.cursor_x]
+			c.input = c.input[:c.cursorX]
 			dirty = true
 		case 12: // CTRL-L
 			dirty = true
 		case 13: // CR
 			break loop
 		case 21: // CTRL-U
-			c.input = append(c.input[:baseSize], c.input[c.cursor_x:]...)
-			c.cursor_x = baseSize
+			c.input = append(c.input[:baseSize], c.input[c.cursorX:]...)
+			c.cursorX = baseSize
 			dirty = true
 		case 23: // CTRL-W
 			for i := len(c.input) - 1; i >= 0; i-- {
 				if i == 0 || c.input[i] == ' ' || c.input[i] == '\t' {
-					c.input = append(c.input[:i], c.input[c.cursor_x:]...)
-					c.cursor_x = i
+					c.input = append(c.input[:i], c.input[c.cursorX:]...)
+					c.cursorX = i
 					dirty = true
 					break
 				}
@@ -247,10 +249,10 @@ loop:
 			}
 
 			tmp := []rune{}
-			tmp = append(tmp, c.input[0:c.cursor_x]...)
+			tmp = append(tmp, c.input[0:c.cursorX]...)
 			tmp = append(tmp, r)
-			c.input = append(tmp, c.input[c.cursor_x:len(c.input)]...)
-			c.cursor_x++
+			c.input = append(tmp, c.input[c.cursorX:len(c.input)]...)
+			c.cursorX++
 			dirty = true
 		}
 	}
@@ -297,6 +299,7 @@ func LoadHistory() error {
 	}
 }
 
+// Clear opened fd
 func Clear() error {
 	err := historyFd.Close()
 	if err != nil {
