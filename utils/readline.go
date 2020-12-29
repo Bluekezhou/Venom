@@ -270,14 +270,16 @@ loop:
 	if len(history) == 1 {
 		history[0] = inputstr
 		history = append(history, "")
+		SaveHistory(inputstr)
 	} else if inputstr != history[len(history)-2] {
 		history[len(history)-1] = inputstr
 		history = append(history, "")
+		SaveHistory(inputstr)
 	}
-	SaveHistory(inputstr)
 	return inputstr, nil
 }
 
+// LoadHistory from logfile
 func LoadHistory() error {
 	fd, err := os.Open(logfile)
 	if err != nil {
