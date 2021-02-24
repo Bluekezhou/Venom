@@ -11,8 +11,7 @@ import (
 	"github.com/Dliv3/Venom/admin/dispather"
 	"github.com/Dliv3/Venom/node"
 	"github.com/Dliv3/Venom/utils"
-
-	"github.com/mattn/go-tty"
+	"github.com/Dliv3/Venom/utils/terminal"
 )
 
 // admin节点想要操作的对端节点的ID，主要用于goto命令
@@ -93,18 +92,17 @@ func Interactive() {
 	// }()
 	var nodeID int
 	var peerNode *node.Node
+	var err error
 	// init
 	currentPeerNodeHashID = node.CurrentNode.HashID
-
-	t, err := tty.Open()
-
+	term, err := terminal.NewWithStdInOut()
 	if err != nil {
-		fmt.Println("Failed to open tty")
-		os.Exit(-1)
+		panic("failed to create terminal")
 	}
-	defer t.Close()
-
-	utils.LoadHistory()
+	err = term.SetHistoryFile(".venom_history")
+	if err == nil {
+		term.LoadHistory()
+	}
 	for {
 		var header string
 
@@ -114,7 +112,8 @@ func Interactive() {
 			header = fmt.Sprintf("(node %d) >>> ", nodeID)
 		}
 		var line string
-		if line, err = utils.ReadLine(t, header); err != nil {
+		term.SetPrompt(header)
+		if line, err = term.ReadLine(); err != nil {
 			continue
 		}
 
@@ -261,7 +260,9 @@ func Interactive() {
 			utils.HandleWindowsCR()
 			fmt.Println("You can execute commands in this shell :D, 'exit' to exit.")
 			// shellExit = false
+			term.Disable()
 			dispather.SendShellCmd(peerNode)
+			term.Enable()
 			// shellExit = true
 			continue
 		case "upload":
@@ -406,16 +407,10 @@ func Interactive() {
 				fmt.Println("invalid ssh server ip address.")
 				break
 			}
-			fmt.Print("use password (1) / ssh key (2)? ")
-
 			var choiceStr string
 			var choice uint16
 
-			if choiceStr, err = t.ReadString(); err != nil {
-				fmt.Println("Error to read choice")
-				continue
-			}
-
+			fmt.Scanf("%s", &choiceStr)
 			if value, err = strconv.ParseUint(choiceStr, 10, 16); err != nil {
 				fmt.Printf("Bad choice %s\n", choiceStr)
 				continue
@@ -425,14 +420,8 @@ func Interactive() {
 			if checkPeerNodeIsVaild() {
 				switch choice {
 				case 1:
-					fmt.Print("password: ")
 					var password string
-
-					if password, err = t.ReadString(); err != nil {
-						fmt.Println("Error to read password")
-						continue
-					}
-
+					fmt.Scanf("%s", &password)
 					fmt.Printf("connect to target host's %d through ssh tunnel (%s@%s:%d).\n", dport, sshUser, sshHost, sshPort)
 					if isAdmin() {
 						dispather.BuiltinSshConnectCmd(sshUser, sshHost, sshPort, dport, choice, password)
@@ -440,12 +429,8 @@ func Interactive() {
 						dispather.SendSshConnectCmd(peerNode, sshUser, sshHost, sshPort, dport, choice, password)
 					}
 				case 2:
-					fmt.Print("file path of ssh key: ")
 					var path string
-					if path, err = t.ReadString(); err != nil {
-						fmt.Println("Error to read path")
-						continue
-					}
+					fmt.Scanf("%s", &path)
 					sshKey, err := ioutil.ReadFile(path)
 					if err != nil {
 						fmt.Println("ssh key error:", err)
@@ -463,8 +448,6 @@ func Interactive() {
 				}
 			}
 		case "exit":
-			t.Close()
-			utils.Clear()
 			os.Exit(0)
 		case "":
 			continue
