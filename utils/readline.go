@@ -32,7 +32,7 @@ type ctx struct {
 func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	var buf bytes.Buffer
 
-	buf.WriteString("\x1b[5>h")
+	// buf.WriteString("\x1b[5>h")
 
 	buf.WriteString("\x1b[1G")
 	if dirty {
@@ -92,7 +92,7 @@ func (c *ctx) redraw(dirty bool, passwordChar rune) error {
 	}
 	buf.WriteString(fmt.Sprintf("\x1b[%dG", ccol+1))
 
-	buf.WriteString("\x1b[5>l")
+	// buf.WriteString("\x1b[5>l")
 	io.Copy(c.w, &buf)
 
 	c.oldRow = row
