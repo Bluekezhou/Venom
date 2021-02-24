@@ -448,6 +448,7 @@ func Interactive() {
 				}
 			}
 		case "exit":
+			term.Disable()
 			os.Exit(0)
 		case "":
 			continue
