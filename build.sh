@@ -6,12 +6,10 @@ echo "build linux x64 admin & agent..."
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o release/admin_linux_x64 admin/admin.go 
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o release/agent_linux_x64 agent/agent.go 
 
-echo "build linux x86 admin & agent..."
-CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -ldflags "-s -w" -o release/admin_linux_x86 admin/admin.go 
+echo "build linux x86 agent..."
 CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -ldflags "-s -w" -o release/agent_linux_x86 agent/agent.go
 
-echo "build windows x86 admin & agent..."
-CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -ldflags "-s -w" -o release/admin.exe admin/admin.go 
+echo "build windows x86 agent..."
 CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -ldflags "-s -w" -o release/agent.exe agent/agent.go 
 
 # examples for iot:
