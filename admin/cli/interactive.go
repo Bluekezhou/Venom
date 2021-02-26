@@ -409,8 +409,8 @@ func Interactive() {
 			}
 			var choiceStr string
 			var choice uint16
-
-			fmt.Scanf("%s", &choiceStr)
+			term.SetPrompt("use password (1) / ssh key (2)? ")
+			choiceStr, err := term.ReadLine()
 			if value, err = strconv.ParseUint(choiceStr, 10, 16); err != nil {
 				fmt.Printf("Bad choice %s\n", choiceStr)
 				continue
@@ -420,8 +420,8 @@ func Interactive() {
 			if checkPeerNodeIsVaild() {
 				switch choice {
 				case 1:
-					var password string
-					fmt.Scanf("%s", &password)
+					term.SetPrompt("password: ")
+					password, _ := term.ReadLine()
 					fmt.Printf("connect to target host's %d through ssh tunnel (%s@%s:%d).\n", dport, sshUser, sshHost, sshPort)
 					if isAdmin() {
 						dispather.BuiltinSshConnectCmd(sshUser, sshHost, sshPort, dport, choice, password)
@@ -429,8 +429,8 @@ func Interactive() {
 						dispather.SendSshConnectCmd(peerNode, sshUser, sshHost, sshPort, dport, choice, password)
 					}
 				case 2:
-					var path string
-					fmt.Scanf("%s", &path)
+					term.SetPrompt("ssh key path: ")
+					path, _ := term.ReadLine()
 					sshKey, err := ioutil.ReadFile(path)
 					if err != nil {
 						fmt.Println("ssh key error:", err)
