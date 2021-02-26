@@ -51,8 +51,13 @@ func CopyStdin2Node(input io.Reader, output *node.Node, c chan bool) {
 				node.CurrentNode.CommandBuffers[protocol.SHELL].WriteCloseMessage()
 			}
 
-			cmdBuf[cmdBufIndex] = buf[0]
-			cmdBufIndex++
+			if buf[0] == 0x7f && cmdBufIndex > 0 {
+				// 模拟删除操作
+				cmdBufIndex--
+			} else {
+				cmdBuf[cmdBufIndex] = buf[0]
+				cmdBufIndex++
+			}
 
 			// 注意：在terminal模式下，输入回车读到的字符是\x0d，而不是'\n'
 			if string(cmdBuf[:cmdBufIndex]) == "exit\x0d" {
