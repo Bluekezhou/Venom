@@ -260,9 +260,7 @@ func Interactive() {
 			utils.HandleWindowsCR()
 			fmt.Println("You can execute commands in this shell :D, 'exit' to exit.")
 			// shellExit = false
-			term.Disable()
 			dispather.SendShellCmd(peerNode)
-			term.Enable()
 			// shellExit = true
 			continue
 		case "upload":

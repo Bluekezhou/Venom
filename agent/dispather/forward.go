@@ -1,6 +1,7 @@
 package dispather
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 
@@ -26,6 +27,25 @@ func CopyStdoutPipe2Node(input io.Reader, output *node.Node, c chan bool) {
 			DstHashID: utils.UUIDToArray32(output.HashID),
 		}
 		if err != nil {
+			fmt.Println("bash exited")
+			// bash进程退出，给CopyNode2StdinPipe线程发送一个退出的消息
+			// 这里和处理网络连接异常断开的方式保持一致
+			data := protocol.ShellPacketCmd{
+				// 如果是0，exit不会被发送给命令行，CopyNode2StdinPipe
+				// 如果是1，不会触发continue操作，handleShellCmd
+				Start:  2,
+				CmdLen: uint32(5),
+				Cmd:    []byte("exit\n"),
+			}
+			packet := protocol.Packet{
+				Separator: global.PROTOCOL_SEPARATOR,
+				CmdType:   protocol.SHELL,
+				SrcHashID: utils.UUIDToArray32(output.HashID),
+				DstHashID: utils.UUIDToArray32(node.CurrentNode.HashID),
+			}
+
+			packet.PackData(data)
+			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteLowLevelPacket(packet)
 			if count > 0 {
 				output.WritePacket(packetHeader, data)
 			}

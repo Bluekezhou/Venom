@@ -13,16 +13,19 @@ import (
 
 func CopyStdin2Node(input io.Reader, output *node.Node, c chan bool) {
 
-	orgBuf := make([]byte, global.MAX_PACKET_SIZE-8)
+	orgBuf := make([]byte, 0x10)
+	cmdBuf := make([]byte, 0x10)
+	cmdBufIndex := 0
 
 	for {
+		// 在terminal开启的情况下，input.Read每次只能读到一个字节
+		// 这在某种程度上会降低通信的效率，但是可以较好地支持shell交互
 		count, err := input.Read(orgBuf)
 
 		// fmt.Println(orgBuf[:count])
 
 		var buf []byte
 
-		// // delete \r
 		if runtime.GOOS == "windows" {
 			buf = bytes.Replace(orgBuf[:count], []byte("\r"), []byte(""), -1)
 			count = len(buf)
@@ -47,8 +50,17 @@ func CopyStdin2Node(input io.Reader, output *node.Node, c chan bool) {
 				// 强制结束 CommandBuffers[protocol.SHELL]
 				node.CurrentNode.CommandBuffers[protocol.SHELL].WriteCloseMessage()
 			}
-			if string(buf[:count]) == "exit\n" {
+
+			cmdBuf[cmdBufIndex] = buf[0]
+			cmdBufIndex++
+
+			// 注意：在terminal模式下，输入回车读到的字符是\x0d，而不是'\n'
+			if string(cmdBuf[:cmdBufIndex]) == "exit\x0d" {
 				break
+			}
+
+			if cmdBufIndex == len(cmdBuf)-1 || buf[0] == 0xd {
+				cmdBufIndex = 0
 			}
 		}
 		if err != nil {
