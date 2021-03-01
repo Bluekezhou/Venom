@@ -55,25 +55,7 @@ func (node *Node) CommandHandler(peerNode *Node) {
 		err := peerNode.ReadLowLevelPacket(&lowLevelPacket)
 		if err != nil {
 			fmt.Println("node disconnect: ", err)
-
-			// 当连接异常断开之后，必须模拟发送一条退出命令，否则shell线程
-			// 会阻塞在等待命令行输出上
-			data := protocol.ShellPacketCmd{
-				// 如果是0，exit不会被发送给命令行，CopyNode2StdinPipe
-				// 如果是1，不会触发continue操作，handleShellCmd
-				Start:  2,
-				CmdLen: uint32(5),
-				Cmd:    []byte("exit\n"),
-			}
-			packet := protocol.Packet{
-				Separator: global.PROTOCOL_SEPARATOR,
-				CmdType:   protocol.SHELL,
-				SrcHashID: utils.UUIDToArray32(peerNode.HashID),
-				DstHashID: utils.UUIDToArray32(node.HashID),
-			}
-
-			packet.PackData(data)
-			node.CommandBuffers[protocol.SHELL].WriteLowLevelPacket(packet)
+			node.CommandBuffers[protocol.SHELL].WriteErrorMessage(err.Error())
 			return
 		}
 		switch utils.Array32ToUUID(lowLevelPacket.DstHashID) {

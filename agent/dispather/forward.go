@@ -11,6 +11,7 @@ import (
 	"github.com/Dliv3/Venom/utils"
 )
 
+// CopyStdoutPipe2Node 把子进程输出发送到目标节点
 func CopyStdoutPipe2Node(input io.Reader, output *node.Node, c chan bool) {
 	buf := make([]byte, global.MAX_PACKET_SIZE-8)
 	for {
@@ -29,23 +30,7 @@ func CopyStdoutPipe2Node(input io.Reader, output *node.Node, c chan bool) {
 		if err != nil {
 			fmt.Println("bash exited")
 			// bash进程退出，给CopyNode2StdinPipe线程发送一个退出的消息
-			// 这里和处理网络连接异常断开的方式保持一致
-			data := protocol.ShellPacketCmd{
-				// 如果是0，exit不会被发送给命令行，CopyNode2StdinPipe
-				// 如果是1，不会触发continue操作，handleShellCmd
-				Start:  2,
-				CmdLen: uint32(5),
-				Cmd:    []byte("exit\n"),
-			}
-			packet := protocol.Packet{
-				Separator: global.PROTOCOL_SEPARATOR,
-				CmdType:   protocol.SHELL,
-				SrcHashID: utils.UUIDToArray32(output.HashID),
-				DstHashID: utils.UUIDToArray32(node.CurrentNode.HashID),
-			}
-
-			packet.PackData(data)
-			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteLowLevelPacket(packet)
+			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteErrorMessage(err.Error())
 			if count > 0 {
 				output.WritePacket(packetHeader, data)
 			}
@@ -61,15 +46,17 @@ func CopyStdoutPipe2Node(input io.Reader, output *node.Node, c chan bool) {
 	return
 }
 
+// CopyNode2StdinPipe 把从目标节点接受的数据发送到子进程
 func CopyNode2StdinPipe(input *node.Node, output io.Writer, c chan bool, cmd *exec.Cmd) {
 	for {
 		var packetHeader protocol.PacketHeader
 		var shellPacketCmd protocol.ShellPacketCmd
 		err := node.CurrentNode.CommandBuffers[protocol.SHELL].ReadPacket(&packetHeader, &shellPacketCmd)
-		if shellPacketCmd.Start == 0 {
+		if err != nil {
 			break
 		}
-		if err != nil {
+
+		if shellPacketCmd.Start == 0 {
 			break
 		}
 		output.Write(shellPacketCmd.Cmd)
