@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"sync"
+
+	"github.com/Dliv3/Venom/utils"
 )
 
 func max(i, j int) int {
@@ -775,13 +777,31 @@ func (t *Terminal) ReleaseFromStdInOut() { // doesn't really need a receiver, bu
 	Restore(fd, oldState)
 }
 
+// NewWithStdInOut 用os.Stdin和os.Stdout创建Terminal
 func NewWithStdInOut() (term *Terminal, err error) {
 	fd := int(os.Stdin.Fd())
 	oldState, err = MakeRaw(fd)
 	if err != nil {
 		panic(err)
 	}
+
 	sh := &shell{r: os.Stdin, w: os.Stdout}
+	term = NewTerminal(sh, "")
+	return
+}
+
+// NewTerminalWithCancelableReader 用CancelableReader和os.Stdout创建Terminal
+func NewTerminalWithCancelableReader() (term *Terminal, err error) {
+	fd := int(os.Stdin.Fd())
+	oldState, err = MakeRaw(fd)
+	if err != nil {
+		panic(err)
+	}
+	if utils.StdReader == nil {
+		utils.StdReader = utils.NewCancelableReader(os.Stdin, 0x10)
+		utils.StdReader.StartReader()
+	}
+	sh := &shell{r: utils.StdReader, w: os.Stdout}
 	term = NewTerminal(sh, "")
 	return
 }
@@ -843,13 +863,13 @@ func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
 		}
 		bt.pos = max(bt.pos-1, -1)
 		bt.cursize = max(bt.cursize-1, 0)
+	// TODO: 支持HOME、END、左右方向键等操作
 	default:
 		bt.pos++
 		if bt.pos == bt.size {
 			// 缓冲区已经被填满了，直接清空
-			bt.pos = -1
+			bt.pos = 0
 			bt.cursize = 0
-			break
 		}
 		bt.input = append(append(bt.input[:bt.pos], input), bt.input[bt.pos+1:]...)
 		bt.cursize++

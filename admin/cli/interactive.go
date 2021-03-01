@@ -95,7 +95,7 @@ func Interactive() {
 	var err error
 	// init
 	currentPeerNodeHashID = node.CurrentNode.HashID
-	term, err := terminal.NewWithStdInOut()
+	term, err := terminal.NewTerminalWithCancelableReader()
 	if err != nil {
 		panic("failed to create terminal")
 	}

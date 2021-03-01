@@ -385,7 +385,7 @@ func SendShellCmd(peerNode *node.Node) {
 
 	if shellPacketRet.Success == 1 {
 		c := make(chan bool, 2)
-		go CopyStdin2Node(os.Stdin, peerNode, c)
+		go CopyStdin2Node(utils.StdReader, peerNode, c)
 		go CopyNode2Stdout(peerNode, os.Stdout, c)
 		<-c
 		<-c
