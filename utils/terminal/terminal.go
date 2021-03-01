@@ -804,3 +804,55 @@ func (t *Terminal) Disable() (err error) {
 	t.enable = false
 	return nil
 }
+
+// BufTerminal contains state of user input
+type BufTerminal struct {
+	// buffer total size
+	size int
+	// buffer to save input
+	input []byte
+	// cursor position
+	pos int
+	// user input size
+	cursize int
+}
+
+// NewBufTerm create a new BufTerminal
+func NewBufTerm(bufsize int) *BufTerminal {
+	return &BufTerminal{
+		size:    bufsize,
+		input:   make([]byte, max(0x10, bufsize)),
+		pos:     -1,
+		cursize: 0,
+	}
+}
+
+// TerminalEmu process terminal input
+func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
+	// 遇到回车，清空缓冲区
+	if bt.cursize > 0 && bt.input[bt.cursize-1] == 0xd {
+		bt.pos = -1
+		bt.cursize = 0
+	}
+
+	switch input {
+	case 0x7f:
+		// 删除
+		if bt.pos > 1 {
+			bt.input = append(bt.input[:bt.pos-1], bt.input[bt.pos:]...)
+		}
+		bt.pos = max(bt.pos-1, -1)
+		bt.cursize = max(bt.cursize-1, 0)
+	default:
+		bt.pos++
+		if bt.pos == bt.size {
+			// 缓冲区已经被填满了，直接清空
+			bt.pos = -1
+			bt.cursize = 0
+			break
+		}
+		bt.input = append(append(bt.input[:bt.pos], input), bt.input[bt.pos+1:]...)
+		bt.cursize++
+	}
+	return bt.input[:bt.cursize]
+}

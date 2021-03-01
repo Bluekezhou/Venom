@@ -9,13 +9,13 @@ import (
 	"github.com/Dliv3/Venom/node"
 	"github.com/Dliv3/Venom/protocol"
 	"github.com/Dliv3/Venom/utils"
+	"github.com/Dliv3/Venom/utils/terminal"
 )
 
 func CopyStdin2Node(input io.Reader, output *node.Node, c chan bool) {
 
+	bufTerm := terminal.NewBufTerm(0x100)
 	orgBuf := make([]byte, 0x10)
-	cmdBuf := make([]byte, 0x10)
-	cmdBufIndex := 0
 
 	for {
 		// 在terminal开启的情况下，input.Read每次只能读到一个字节
@@ -51,21 +51,10 @@ func CopyStdin2Node(input io.Reader, output *node.Node, c chan bool) {
 				node.CurrentNode.CommandBuffers[protocol.SHELL].WriteCloseMessage()
 			}
 
-			if buf[0] == 0x7f && cmdBufIndex > 0 {
-				// 模拟删除操作
-				cmdBufIndex--
-			} else {
-				cmdBuf[cmdBufIndex] = buf[0]
-				cmdBufIndex++
-			}
-
+			cmdBuf := bufTerm.TerminalEmu(buf[0])
 			// 注意：在terminal模式下，输入回车读到的字符是\x0d，而不是'\n'
-			if string(cmdBuf[:cmdBufIndex]) == "exit\x0d" {
+			if string(cmdBuf) == "exit\x0d" {
 				break
-			}
-
-			if cmdBufIndex == len(cmdBuf)-1 || buf[0] == 0xd {
-				cmdBufIndex = 0
 			}
 		}
 		if err != nil {
