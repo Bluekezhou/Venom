@@ -798,7 +798,8 @@ func NewTerminalWithCancelableReader() (term *Terminal, err error) {
 		panic(err)
 	}
 	if utils.StdReader == nil {
-		utils.StdReader = utils.NewCancelableReader(os.Stdin, 0x10)
+		// 缓冲区不能太小，否则复制粘贴时会出现问题
+		utils.StdReader = utils.NewCancelableReader(os.Stdin, 4096)
 		utils.StdReader.StartReader()
 	}
 	sh := &shell{r: utils.StdReader, w: os.Stdout}
