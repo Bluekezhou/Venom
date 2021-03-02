@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -70,6 +71,25 @@ func printEachMap(nodeID string, depth int, printed map[string]bool) {
 		printed[value] = true
 		printEachMap(value, depth+1, printed)
 	}
+}
+
+func handleCommonCmd(cmd string) (bool, error) {
+	support := []string{"ls", "pwd"}
+	cmdStr := strings.Split(cmd, " ")
+	for _, c := range support {
+		if strings.TrimSpace(cmdStr[0]) == c {
+			cmd := exec.Command(cmdStr[0], cmdStr[1:]...)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("error to execute %s\n", cmd)
+				return true, err
+			}
+
+			fmt.Println(string(out))
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // Interactive 交互式控制
@@ -451,6 +471,10 @@ func Interactive() {
 		case "":
 			continue
 		default:
+			handled, _ := handleCommonCmd(line)
+			if handled {
+				continue
+			}
 			fmt.Printf("Unknown command %s, use \"help\" to see all commands.\n", cmdStr[0])
 		}
 		// utils.HandleWindowsCR()
