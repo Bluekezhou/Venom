@@ -365,7 +365,7 @@ func SendUploadCmd(peerNode *node.Node, localPath string, remotePath string) boo
 }
 
 // SendShellCmd 发送shell命令
-func SendShellCmd(peerNode *node.Node) {
+func SendShellCmd(peerNode *node.Node, istty bool) {
 
 	shellPacketCmd := protocol.ShellPacketCmd{
 		Start: 1,
@@ -385,7 +385,7 @@ func SendShellCmd(peerNode *node.Node) {
 
 	if shellPacketRet.Success == 1 {
 		c := make(chan bool, 2)
-		go CopyStdin2Node(utils.StdReader, peerNode, c)
+		go CopyStdin2Node(utils.StdReader, peerNode, c, istty)
 		go CopyNode2Stdout(peerNode, os.Stdout, c)
 		<-c
 		<-c

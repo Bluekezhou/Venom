@@ -95,7 +95,7 @@ func PrintWindowsBanner() {
 `)
 }
 
-// ShowBanner http://patorjk.com/software/taag/#p=display&h=3&f=Bloody&t=venom
+// PrintBanner http://patorjk.com/software/taag/#p=display&h=3&f=Bloody&t=venom
 func PrintBanner() {
 	fmt.Printf("\x1b[0;34m%s \x1b[0m", `
                                                
@@ -113,9 +113,9 @@ func PrintBanner() {
 `)
 }
 
-// ShowUsage
+// ShowUsage 打印命令帮助
 func ShowUsage() {
-	fmt.Println(`
+	fmt.Printf(`
   help                                     Help information.
   exit                                     Exit.
   show                                     Display network topology.
@@ -125,7 +125,7 @@ func ShowUsage() {
   listen     [lport]                       Listen on a port on the target node.
   connect    [rhost] [rport]               Connect to a new node through the target node.
   sshconnect [user@ip:port] [dport]        Connect to a new node through ssh tunnel.
-  shell                                    Start an interactive shell on the target node.
+  shell      [notty]                       Start an interactive shell on the target node, notty is optional.
   upload     [local_file]  [remote_file]   Upload files to the target node.
   download   [remote_file]  [local_file]   Download files from the target node.
   socks      [lport]                       Start a socks5 server.
