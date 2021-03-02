@@ -67,7 +67,12 @@ func printEachMap(nodeID string, depth int, printed map[string]bool) {
 			fmt.Print("     ")
 		}
 		fmt.Print("+ -- ")
-		fmt.Println(node.GNodeInfo.NodeUUID2Number[value])
+		if _, ok := node.GNodeInfo.NodeDescription[value]; ok {
+			fmt.Printf("%d (%s)\n", node.GNodeInfo.NodeUUID2Number[value],
+				node.GNodeInfo.NodeDescription[value])
+		} else {
+			fmt.Println(node.GNodeInfo.NodeUUID2Number[value])
+		}
 		printed[value] = true
 		printEachMap(value, depth+1, printed)
 	}
