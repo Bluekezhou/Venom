@@ -858,9 +858,7 @@ func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
 	switch input {
 	case 0x7f:
 		// 删除
-		if bt.pos > 1 {
-			bt.input = append(bt.input[:bt.pos-1], bt.input[bt.pos:]...)
-		}
+		bt.input = append(bt.input[:bt.pos], bt.input[bt.pos+1:]...)
 		bt.pos = max(bt.pos-1, -1)
 		bt.cursize = max(bt.cursize-1, 0)
 	// TODO: 支持HOME、END、左右方向键等操作
