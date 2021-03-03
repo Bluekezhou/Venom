@@ -30,7 +30,7 @@ func CopyStdoutPipe2Node(input io.Reader, output *node.Node, c chan bool) {
 		if err != nil {
 			fmt.Println("bash exited")
 			// bash进程退出，给CopyNode2StdinPipe线程发送一个退出的消息
-			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteErrorMessage(err.Error())
+			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteErrorMessage("Shell-Exit")
 			if count > 0 {
 				output.WritePacket(packetHeader, data)
 			}
@@ -52,7 +52,19 @@ func CopyNode2StdinPipe(input *node.Node, output io.Writer, c chan bool, cmd *ex
 		var packetHeader protocol.PacketHeader
 		var shellPacketCmd protocol.ShellPacketCmd
 		err := node.CurrentNode.CommandBuffers[protocol.SHELL].ReadPacket(&packetHeader, &shellPacketCmd)
+
 		if err != nil {
+			fmt.Printf("err %s\n", err.Error())
+			if err.Error() == "EOF" {
+				// 网络中断，先把shell退出
+				fmt.Println("internet error")
+				output.Write([]byte("exit\n"))
+				err = node.CurrentNode.CommandBuffers[protocol.SHELL].ReadPacket(&packetHeader, &shellPacketCmd)
+			}
+
+			if err.Error() != "Shell-Exit" {
+				fmt.Println("error should be Shell-Exit, check it")
+			}
 			break
 		}
 
