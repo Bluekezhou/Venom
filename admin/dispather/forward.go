@@ -13,7 +13,7 @@ import (
 // CopyStdin2Node 把键盘输入发送到远端
 func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan bool, istty bool) {
 
-	bufTerm := terminal.NewBufTerm(0x100)
+	bufTerm := terminal.NewBufTerm(4096)
 	buf := make([]byte, 1)
 
 	for {

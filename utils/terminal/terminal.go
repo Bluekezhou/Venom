@@ -870,7 +870,7 @@ func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
 		bt.pos++
 		if bt.pos == bt.size {
 			// 缓冲区已经被填满了，直接清空
-			bt.pos = 0
+			bt.pos = -1
 			bt.cursize = 0
 		}
 		bt.input = append(append(bt.input[:bt.pos], input), bt.input[bt.pos+1:]...)
