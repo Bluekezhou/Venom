@@ -11,29 +11,17 @@ import (
 )
 
 // CopyStdin2Node 把键盘输入发送到远端
-func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan bool, istty bool) {
+func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan bool) {
 
 	bufTerm := terminal.NewBufTerm(4096)
 	buf := make([]byte, 1)
 
 	for {
-		if istty {
-			// 在terminal开启的情况下，input.Read每次只能读到一个字节
-			_, err := utils.StdReader.Read(buf)
-			if err != nil {
-				break
-			}
-		} else {
-			var line string
-			var err error
-			// 目标不支持tty，在本地模拟terminal功能
-			terminal.GTerminal.SetPrompt("$ ")
-			if line, err = terminal.GTerminal.ReadLine(); err != nil {
-				break
-			}
-
-			buf = append([]byte(line), 0xd)
-			// fmt.Printf("len buf %d\n", len(buf))
+		// 在terminal开启的情况下，input.Read每次只能读到一个字节
+		// 这在某种程度上会降低通信的效率，但是可以较好地支持shell交互
+		_, err := utils.StdReader.Read(buf)
+		if err != nil {
+			break
 		}
 
 		data := protocol.ShellPacketCmd{
@@ -53,13 +41,8 @@ func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan
 			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteCloseMessage()
 		}
 
-		var cmdBuf []byte
-		if istty {
-			cmdBuf = bufTerm.TerminalEmu(buf[0])
-		} else {
-			cmdBuf = buf
-		}
-
+		cmdBuf := bufTerm.TerminalEmu(buf[0])
+		// 注意：在terminal模式下，输入回车读到的字符是\x0d，而不是'\n'
 		if string(cmdBuf) == "exit\x0d" {
 			// fmt.Println("exiting shell mode!!!")
 			break

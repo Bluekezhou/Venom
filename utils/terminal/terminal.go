@@ -878,5 +878,3 @@ func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
 	}
 	return bt.input[:bt.cursize]
 }
-
-var GTerminal *Terminal = nil

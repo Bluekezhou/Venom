@@ -120,13 +120,10 @@ func Interactive() {
 	var err error
 	// init
 	currentPeerNodeHashID = node.CurrentNode.HashID
-	if terminal.GTerminal == nil {
-		terminal.GTerminal, err = terminal.NewTerminalWithCancelableReader()
-		if err != nil {
-			panic("failed to create terminal")
-		}
+	term, err := terminal.NewTerminalWithCancelableReader()
+	if err != nil {
+		panic("failed to create terminal")
 	}
-	term := terminal.GTerminal
 	err = term.SetHistoryFile(".venom_history")
 	if err == nil {
 		term.LoadHistory()
@@ -288,11 +285,7 @@ func Interactive() {
 			utils.HandleWindowsCR()
 			fmt.Println("You can execute commands in this shell :D, 'exit' to exit.")
 			// shellExit = false
-			istty := true
-			if len(cmdStr) == 2 && cmdStr[1] == "notty" {
-				istty = false
-			}
-			dispather.SendShellCmd(peerNode, istty)
+			dispather.SendShellCmd(peerNode)
 			// shellExit = true
 			continue
 		case "upload":
