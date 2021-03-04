@@ -66,5 +66,10 @@ func (cr *CancelableReader) SendCancelMessage() {
 	}
 }
 
+// GetBufSize 获取缓冲区大小
+func (cr *CancelableReader) GetBufSize() int {
+	return cr.size
+}
+
 // StdReader 全局的CancelableReader
 var StdReader *CancelableReader = nil

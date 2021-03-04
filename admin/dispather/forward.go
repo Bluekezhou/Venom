@@ -14,19 +14,17 @@ import (
 func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan bool) {
 
 	bufTerm := terminal.NewBufTerm(4096)
-	buf := make([]byte, 1)
+	buf := make([]byte, stdReader.GetBufSize())
 
 	for {
-		// 在terminal开启的情况下，input.Read每次只能读到一个字节
-		// 这在某种程度上会降低通信的效率，但是可以较好地支持shell交互
-		_, err := utils.StdReader.Read(buf)
+		count, err := utils.StdReader.Read(buf)
 		if err != nil {
 			break
 		}
 
 		data := protocol.ShellPacketCmd{
 			Start:  1,
-			CmdLen: uint32(len(buf)),
+			CmdLen: uint32(count),
 			Cmd:    buf,
 		}
 		packetHeader := protocol.PacketHeader{
@@ -41,7 +39,7 @@ func CopyStdin2Node(stdReader *utils.CancelableReader, output *node.Node, c chan
 			node.CurrentNode.CommandBuffers[protocol.SHELL].WriteCloseMessage()
 		}
 
-		cmdBuf := bufTerm.TerminalEmu(buf[0])
+		cmdBuf := bufTerm.TerminalEmu(buf)
 		// 注意：在terminal模式下，输入回车读到的字符是\x0d，而不是'\n'
 		if string(cmdBuf) == "exit\x0d" {
 			// fmt.Println("exiting shell mode!!!")

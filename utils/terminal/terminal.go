@@ -849,23 +849,29 @@ func NewBufTerm(bufsize int) *BufTerminal {
 }
 
 // TerminalEmu process terminal input
-func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
+func (bt *BufTerminal) TerminalEmu(input []byte) (buffer []byte) {
 	// 遇到回车，清空缓冲区
 	if bt.cursize > 0 && bt.input[bt.cursize-1] == 0xd {
 		bt.pos = -1
 		bt.cursize = 0
 	}
 
-	switch input {
-	case 0x7f:
-		// 删除
+	key, _ := bytesToKey(input)
+	switch key {
+	case KeyBackspace:
 		if bt.pos < 0 {
 			break
 		}
 		bt.input = append(bt.input[:bt.pos], bt.input[bt.pos+1:]...)
 		bt.pos = max(bt.pos-1, -1)
 		bt.cursize = max(bt.cursize-1, 0)
-	// TODO: 支持HOME、END、左右方向键等操作
+	case KeyLeft:
+		bt.pos = max(bt.pos-1, -1)
+	case KeyRight:
+		bt.pos = min(bt.pos+1, bt.size-1)
+	// TODO: 支持HOME、END、左右方向键
+
+	//default 非控制类字符
 	default:
 		bt.pos++
 		if bt.pos == bt.size {
@@ -873,7 +879,9 @@ func (bt *BufTerminal) TerminalEmu(input byte) (buffer []byte) {
 			bt.pos = -1
 			bt.cursize = 0
 		}
-		bt.input = append(append(bt.input[:bt.pos], input), bt.input[bt.pos+1:]...)
+
+		// TODO 回车需要特殊处理
+		bt.input = append(append(bt.input[:bt.pos], input[0]), bt.input[bt.pos+1:]...)
 		bt.cursize++
 	}
 	return bt.input[:bt.cursize]
